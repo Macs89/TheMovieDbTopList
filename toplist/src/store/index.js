@@ -7,6 +7,7 @@ function Store(history) {
     reducer: {
       router: connectRouter(history),
       movies: container.movieState.store,
+      messages: container.messageState.store,
     },
     devTools: true,
   });
