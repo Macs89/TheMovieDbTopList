@@ -1,5 +1,6 @@
 import store, { actions } from './reducers';
 import _ from 'lodash';
+import { handleResponse } from '../../../lib/messages';
 
 function MovieState(dataBase) {
   const getMovies = () => async (dispatch) => {
@@ -12,13 +13,25 @@ function MovieState(dataBase) {
       const moviesByPage = await dataBase.getTopRatedMovies({
         page: currentPage,
       });
-      if (currentPage === pages.length) {
-        const remainder = topListLength % moviePerPage;
-        const leftOverMovies = _.slice(moviesByPage.results, 0, remainder);
-        movies.push(...leftOverMovies);
-      } else {
-        movies.push(...moviesByPage.results);
-      }
+      dispatch(
+        handleResponse({
+          result: moviesByPage,
+          message: 'We apologies. Please try to refresh the site.',
+          success: () => {
+            if (currentPage === pages.length) {
+              const remainder = topListLength % moviePerPage;
+              const leftOverMovies = _.slice(
+                moviesByPage.results,
+                0,
+                remainder
+              );
+              movies.push(...leftOverMovies);
+            } else {
+              movies.push(...moviesByPage.results);
+            }
+          },
+        })
+      );
     }
     dispatch(actions.receiveMovies(movies));
     await dispatch(getAllMovieDetails());
@@ -30,14 +43,26 @@ function MovieState(dataBase) {
     const movieDetails = [];
     for (const id of ids) {
       const details = await dataBase.getMovieDetails(id);
-      movieDetails.push(details);
+      dispatch(
+        handleResponse({
+          result: details,
+          message: 'We apologies. Please try to refresh the site.',
+          success: () => movieDetails.push(details),
+        })
+      );
     }
     dispatch(actions.receiveMovieDetails(movieDetails));
   };
 
   const getDatabaseBasicUrlInfo = () => async (dispatch) => {
     const config = await dataBase.getConfiguration();
-    dispatch(actions.receiveImageConfig(config));
+    dispatch(
+      handleResponse({
+        result: config,
+        message: 'We apologies. Please try to refresh the site.',
+        success: () => dispatch(actions.receiveImageConfig(config)),
+      })
+    );
   };
 
   const selectMovie = (id) => async (dispatch) => {
